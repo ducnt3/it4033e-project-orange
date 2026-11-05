@@ -1,0 +1,10 @@
+setA-08 run 1: TIME_LIMIT obj=1.0000 gap=0.6811 time=1953.8s nodes=0
+setA-08 run 2: TIME_LIMIT obj=1.0000 gap=0.6811 time=10409.0s nodes=0
+setA-08 run 3: TIME_LIMIT obj=0.5612 gap=0.4317 time=1965.2s nodes=0
+setA-08 run 4: TIME_LIMIT obj=1.0000 gap=0.6811 time=37321.7s nodes=0
+setA-08 run 5: TIME_LIMIT obj=0.5612 gap=0.4317 time=6195.2s nodes=0
+setA-08 run 6: TIME_LIMIT obj=1.0000 gap=0.6811 time=1982.5s nodes=0
+setA-08 run 7: OPTIMAL obj=0.3189 gap=0.0000 time=1744.1s nodes=1
+setA-08 run 8: TIME_LIMIT obj=1.0000 gap=0.6811 time=8899.8s nodes=0
+setA-08 run 9: TIME_LIMIT obj=1.0000 gap=0.6811 time=51940.5s nodes=0
+setA-08 run 10: TIME_LIMIT obj=0.5612 gap=0.4317 time=2091.9s nodes=0

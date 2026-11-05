@@ -1,0 +1,5 @@
+setA-11 run 6: TIME_LIMIT obj=1.0000 gap=1.0000 time=2484.6s nodes=0
+setA-11 run 7: TIME_LIMIT obj=1.0000 gap=1.0000 time=2338.4s nodes=0
+setA-11 run 8: TIME_LIMIT obj=1.0000 gap=1.0000 time=2445.9s nodes=0
+setA-11 run 9: TIME_LIMIT obj=1.0000 gap=1.0000 time=2469.0s nodes=0
+setA-11 run 10: TIME_LIMIT obj=1.0000 gap=1.0000 time=2462.3s nodes=0

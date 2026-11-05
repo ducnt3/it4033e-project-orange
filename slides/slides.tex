@@ -1,0 +1,263 @@
+% Defense slides (10 min), IT4033E capstone -- Project Orange (T-ASR).
+% Build: cd slides && pdflatex slides.tex && pdflatex slides.tex
+% Result tables are the same generated files as the report (../report/tables/), so they stay in sync.
+% Numbers written in the text must match report/report.tex (Comments) -- re-check after each refresh.
+\documentclass[11pt,aspectratio=169]{beamer}
+\usetheme{Madrid}
+\usecolortheme{beaver}
+\setbeamertemplate{navigation symbols}{}
+\usepackage[T5,T1]{fontenc}  % T5: Vietnamese author names
+\usepackage{lmodern,amsmath,amssymb,booktabs,tabularx,array,adjustbox}
+% Speaker notes (\note{...} in each frame): hidden in slides.pdf, shown by slides-notes.tex
+\ifdefined\withnotes
+  \usepackage{pgfpages}
+  \setbeameroption{show notes on second screen=right}
+  \setbeamertemplate{note page}{\vspace{2mm}\small\insertnote}
+\fi
+
+\title[T-Adaptive Segment Routing]{Mathematical modelling of T-Adaptive Segment Routing}
+\subtitle{Project Orange -- Challenge EURO/ROADEF 2026}
+\author[{\fontencoding{T5}\selectfont N.\,T.~Đức, H.\,H.~Chiến}]{{\fontencoding{T5}\selectfont Nguyễn Tiến Đức} (20252076M) \and {\fontencoding{T5}\selectfont Hoàng Huy Chiến} (20261069M)}
+\institute{IT4033E Capstone, SoICT}
+\date{October 2026}
+
+
+\begin{document}
+
+\begin{frame}
+\titlepage
+\note{
+Good morning. We are Nguyen Tien Duc and Hoang Huy Chien. Our capstone project is Project Orange, taken from the EURO/ROADEF 2026 challenge: T-Adaptive Segment Routing. In about ten minutes we will describe the problem, our MILP model, how we validated it, and what happened when we solved the twenty instances of set A with an open-source solver.
+}
+\end{frame}
+
+\begin{frame}{Problem: T-Adaptive Segment Routing}
+\begin{itemize}
+\item IP backbone $G=(V,A)$, link metric $\omega(a)$, capacity $c(a)$; demands $d=(s_d,t_d)$ with volume $\nu(d,t)$.
+\item Packets follow shortest paths; ties are split (ECMP). Congestion = high load $\lambda(a,t)=\text{flow}(a,t)/c(a)$.
+\item \textbf{Segment Routing}: each demand gets a list of at most $maxSeg-1$ \emph{waypoints};
+shortest-path routing between consecutive waypoints $\Rightarrow$ bend flows away from hot links.
+\item Periods $t=0$ (nominal) and $t=1$ (links $q(1)$ down); between periods at most $\kappa(1)$ segment changes.
+\end{itemize}
+\vspace{2mm}
+\begin{block}{Goal}
+Choose a segment path per demand and period to minimise link loads.
+Experiments: period~0 alone, then periods $\{0,1\}$ with budget, on the 20 instances of set~A.
+\end{block}
+\note{
+The setting is an IP backbone network. Each link has a routing metric and a capacity, and each demand is a source-target pair with a traffic volume. Routers send packets along shortest paths and split ties evenly, which is called ECMP. Congestion is measured by link utilisation: flow divided by capacity.
+
+Segment Routing lets the operator add up to maxSeg minus one waypoints to a demand. Between two consecutive waypoints the traffic still follows shortest paths, so waypoints bend flows away from hot links without changing the metrics.
+
+The T-adaptive part: there are several periods. Period 0 is the nominal network; in period 1 some links are down. Between periods we may change at most kappa segments, so we cannot re-optimise everything from scratch.
+
+Our goal is to choose one segment path per demand and per period that minimises link load. We ran two experiments: period 0 alone, then periods 0 and 1 together with the change budget.
+}
+\end{frame}
+
+\begin{frame}{Data and split coefficients $r(i,j,a,t)$}
+\begin{itemize}
+\item Input: \texttt{net.json} ($\omega$, $c$), \texttt{tm.json} ($\nu$), \texttt{scenario.json} ($maxSeg$, $\kappa$, $q$).
+\item $r(i,j,a,t)$ = fraction of a unit flow $i\to j$ in $G(t)$ that crosses $a$ (course document):
+\[
+r(i,j,a,t)=\frac{\sigma_{iu}(t)\,\sigma_{vj}(t)}{\sigma_{ij}(t)}\quad\text{if } d_{iu}+\omega(a)+d_{vj}=d_{ij},\ a=(u,v),\ \text{else } 0
+\]
+$\sigma$ = number of shortest paths: one Dijkstra with path counting per source, $O(nm\log n)$.
+\item Path counting $\neq$ per-node ECMP: toy instance $r(v_0,v_5,a_{1,3},0)=1/3$ vs.\ $1/2$
+in the subject's table. We keep the course definition.
+\end{itemize}
+\note{
+The input comes in three JSON files: the network, the traffic matrix, and the scenario with maxSeg, the budget kappa and the failed links.
+
+The key precomputed data is r(i,j,a,t): the fraction of one unit of flow from i to j that crosses link a in period t. Following the course document, it is sigma(i,u) times sigma(v,j) over sigma(i,j), where sigma counts shortest paths, and it is nonzero only if a lies on a shortest path. We compute it with one Dijkstra with path counting per source.
+
+One point we want to be transparent about: path counting is not the same as per-node ECMP splitting. On the toy instance we get one third where the subject's table says one half. We kept the course definition and documented the difference.
+}
+\end{frame}
+
+\begin{frame}{MILP model}
+\textbf{Variables}
+\begin{itemize}
+\item $x^{dt}_{ij}\in\{0,1\}$: segment $(i,j)\in K$ used by demand $d$ at period $t$ ($K$ = reachable pairs).
+\item $U\ge0$: maximum link utilisation (MLU);\quad $y^{dt}_{ij}\ge0$ linearises $|x^{dt}_{ij}-x^{d,t-1}_{ij}|$.
+\end{itemize}
+\textbf{Objective} $\min U$ \;(first criterion of the subject's lexicographic objective).
+\begin{align*}
+&\textstyle\sum_j x^{dt}_{ij}-\sum_j x^{dt}_{ji}=\mathbb 1[i=s_d]-\mathbb 1[i=t_d] && \text{(1) path in the segment graph}\\
+&\textstyle\sum_{(i,j)} x^{dt}_{ij}\le maxSeg && \text{(2) at most 5 waypoints}\\
+&\textstyle\sum_d\sum_{(i,j)} r(i,j,a,t)\,\nu(d,t)\,x^{dt}_{ij}\le U\,c(a)\quad \forall a\notin q(t) && \text{(3) load}\\
+&\textstyle\sum_{d,(i,j)} y^{dt}_{ij}\le\kappa(t),\ \ y\ge x^t-x^{t-1},\ y\ge x^{t-1}-x^t && \text{(4) change budget}
+\end{align*}
+Size: $|D|\,|K|\,|T|$ binaries, $|K|\le n(n-1)$ $\Rightarrow$ from $1.5\cdot10^4$ (inst.\ 01) to $\approx10^9$ (inst.\ 20).
+\note{
+The variables: x is one if demand d uses segment (i,j) in period t; K is the set of reachable pairs. U is the maximum link utilisation, and y linearises the absolute change between consecutive periods.
+
+We minimise U, the first criterion of the subject's lexicographic objective.
+
+Constraint 1 is flow conservation in the segment graph, so the chosen segments form a path from source to target. Constraint 2 limits the number of segments. Constraint 3 says the load on each working link, built from the r coefficients and the volumes, is at most U times the capacity. Constraint 4 is the change budget between periods.
+
+The weak point is size: binaries = demands times segments times periods. It goes from fifteen thousand on instance 1 to about one billion on instance 20. This drives everything you will see in the results.
+}
+\end{frame}
+
+\begin{frame}{Implementation and validation}
+\begin{itemize}
+\item Julia 1.13 + JuMP 1.32 + HiGHS 1.15 (open-source branch-and-bound).
+\item \textbf{Validation first}: 24 automated tests on the subject's toy instance; MILP optimum
+$=$ brute-force enumeration of all segment paths (MLU $0.375$, waypoint $v_4$).
+\item \textbf{MIP start}: no-waypoint routing ($x_{s_dt_d}=1$) is always feasible with 0 changes;
+its MLU is the reference column \emph{no-wp}.
+\item \textbf{Protocol}: 10 runs per instance (HiGHS seeds 1--10, 1 thread each), time limit 1800~s (period 0) /
+3600~s (periods 0+1); gap $=1-\text{LB}/\text{UB}$; CPU = \texttt{optimize!} time only.
+\item \textbf{Machine}: i9-14900K, 125~GB RAM (shared server), runs in parallel through a memory-aware job queue.
+\end{itemize}
+\note{
+We implemented the model in Julia with JuMP and the open-source solver HiGHS.
+
+Before any experiment we validated it on the subject's toy instance: 24 automated tests, and the MILP optimum equals brute-force enumeration of all segment paths, MLU 0.375 with waypoint v4.
+
+We give HiGHS a MIP start: routing with no waypoints is always feasible and uses zero changes. Its MLU is the reference column no-wp in the tables.
+
+Protocol: ten runs per instance, seeds 1 to 10, one thread each, time limit 30 minutes for period 0 and one hour for two periods. Gap is one minus lower bound over upper bound; CPU time is the optimize call only.
+
+Everything ran on a shared server, i9-14900K with 125 GB of RAM, through a job queue that only starts a job when its measured memory fits.
+}
+\end{frame}
+
+\begin{frame}{Results -- period 0 (averages over 10 runs)}
+\centering
+\adjustbox{max width=\textwidth,max totalheight=0.8\textheight}{\input{../report/tables/results-period0.tex}}
+\note{
+Period 0, averaged over ten runs. Columns: instance size, number of proved optima, average and best MLU, best bound, gap, time, branch-and-bound nodes, and the no-waypoint MLU for reference.
+
+Read it top to bottom: small instances are solved, medium ones partly, large ones only return the MIP start, and the last ones are marked too large to build. The next slide explains each group.
+}
+\end{frame}
+
+\begin{frame}{Period 0 -- observations}
+% keep in sync with the Comments of report/report.tex
+\begin{itemize}
+\item \textbf{01--03}: optimal at the root node in seconds; waypoints lower the MLU from 1.00 to 0.93, 0.55, 0.94.
+\item \textbf{04--05}: no proof within 30 min, time spent in the root node (0 B\&B nodes).
+Strong seed effect: on 05, 4/10 seeds prove the optimum $0.1155$; on 04 only 1/10 improves the MIP start.
+$\Rightarrow$ averaging over 10 seeds is necessary.
+\item \textbf{06--12} (millions of binaries): the LP relaxation takes most of the time; usually the MIP start is returned.
+08: one seed proves $0.319$, 3 stop at $0.561$, 6 keep $1.000$.
+10--12, 14, 15: all runs stop with the MIP start and no lower bound (gap 100\%).
+\item HiGHS does not always respect the time limit: up to 51940~s for a 1800~s limit (instance 08).
+\item \textbf{13--20}: up to $9.6\cdot10^8$ binaries; $\approx2$~GB per million variables $\Rightarrow$ only 14, 15 fit in 125~GB.
+\end{itemize}
+\note{
+Instances 1 to 3 are solved to optimality at the root node in seconds. Waypoints reduce the MLU from 1.00 to 0.93, 0.55 and 0.94; instance 2 shows the strongest gain.
+
+Instances 4 and 5 are not proved within 30 minutes; all the time is spent in the root node. The seed matters a lot: on instance 5, four of ten seeds prove the optimum 0.1155; on instance 4 only one seed improves the MIP start. That is why we average over ten seeds.
+
+From instance 6 on there are millions of binaries. The LP relaxation takes most of the time and usually the MIP start is returned. On instance 8 one seed proves 0.319, three stop at 0.561 and six keep 1.0. Instances 10 to 12, 14 and 15 all stop with the MIP start and no lower bound.
+
+HiGHS does not always respect the time limit: one run on instance 8 took 51,940 seconds for an 1,800-second limit. We report measured times as they are.
+
+Instances 13 and 16 to 20 need up to 960 million binaries. At about 2 GB per million variables, only 14 and 15 fit in 125 GB.
+}
+\end{frame}
+
+\begin{frame}{Results -- periods 0 and 1 (budget, presolve off)}
+\centering
+\adjustbox{max width=\textwidth,max totalheight=0.8\textheight}{\input{../report/tables/results-period01.tex}}
+\note{
+The two-period experiment with the change budget, run with presolve off; the next slide explains why. Rows with fewer than ten runs, and rows marked too large, come from time and memory limits, which the report states explicitly.
+}
+\end{frame}
+
+\begin{frame}{Two periods -- observations}
+\begin{itemize}
+\item Variables $\times3$ (two copies of $x$ plus $y$).
+\item \textbf{Presolve stall}: with HiGHS defaults, instance 04 stayed in presolve $>3$~h for a 1~h limit.
+Ablation (60~s limit): removing (4) \emph{or} presolve off $\Rightarrow$ limit respected.
+$\Rightarrow$ the dense budget row blocks presolve; all two-period runs use presolve off.
+\item Instance 02: link down makes the no-waypoint MLU $1.098$ (congestion); optimum $0.903$ is proved by
+7/10 seeds with presolve off vs.\ 2/10 with presolve on.
+\item Instance 05: 2/10 seeds find $0.323$ (no-wp $1.000$); the others keep the MIP start.
+\item Without presolve memory grows to 3.7--5.5~GB per million variables
+$\Rightarrow$ two-period model of 07 ($\approx88$~GB) only alone, 10--20 cannot be built.
+\end{itemize}
+\note{
+With two periods the model has about three times more variables: two copies of x plus y.
+
+First problem: a presolve stall. With default settings, instance 4 stayed in presolve more than three hours with a one-hour limit. A small ablation with a 60-second limit showed that removing the budget constraint, or turning presolve off, each made the limit respected. So the dense budget row blocks presolve, and all two-period runs use presolve off.
+
+Instance 2 is the interesting case: the link failure makes the no-waypoint MLU 1.098, so the network is congested. The optimum 0.903 is proved by seven of ten seeds with presolve off, against two of ten with presolve on.
+
+On instance 5, two seeds find 0.323 against 1.0 without waypoints; the others keep the MIP start.
+
+The price of presolve off is memory: 3.7 to 5.5 GB per million variables. The two-period model of instance 7 needs about 88 GB, so it can only run alone, and instances 10 to 20 cannot be built.
+}
+\end{frame}
+
+\begin{frame}{Experimental process: trial and error}
+\footnotesize
+\begin{tabularx}{\textwidth}{@{}>{\raggedright\arraybackslash}p{4.2cm}>{\raggedright\arraybackslash}X>{\raggedright\arraybackslash}X@{}}
+\toprule
+Symptom & Diagnosis & Fix / consequence \\
+\midrule
+Toy: $r=1/3$, subject says $1/2$ & path counting $\neq$ per-node ECMP & keep course definition \\
+04: no feasible solution in 300~s & stuck in root node & no-waypoint MIP start \\
+Laptop 24~GB too small & measured $\approx2$--3~GB / M vars & 125~GB server + memory-aware queue \\
+Two-period build 5428~s & \texttt{sum} over JuMP array is quadratic & generator form: 1.4~s \\
+\texttt{optimize!} $>3$~h, 1~h limit & ablation: presolve $\times$ budget row & presolve off for two periods \\
+Runs far beyond time limit & HiGHS checks limit between steps (likely) & report measured time; reorder queue \\
+\bottomrule
+\end{tabularx}
+\vspace{2mm}
+\normalsize
+\textbf{Lessons}: validate on a toy instance against brute force first; solver settings are part of the protocol;
+for exact MILPs of this size, \emph{memory} is the first limit.
+\note{
+Since the grading is on scientific method, we logged every problem. The main ones:
+
+The toy split ratio disagreed with the subject: path counting versus ECMP; we kept the course definition.
+
+Instance 4 found no feasible solution in 300 seconds, stuck in the root node: we added the no-waypoint MIP start.
+
+The laptop's 24 GB was too small: we measured memory per million variables, moved to the 125 GB server and wrote a memory-aware queue.
+
+Building the two-period model took 5,428 seconds because sum over a JuMP array is quadratic; the generator form takes 1.4 seconds.
+
+Then the presolve stall, and the runs far beyond the time limit, which we report as measured.
+
+Lessons: validate on a toy instance against brute force first; solver settings are part of the protocol; and for exact MILPs of this size, memory is the first limit, before time.
+}
+\end{frame}
+
+\begin{frame}{Conclusion}
+\begin{itemize}
+\item Compact MILP for T-ASR (segment variables, path-counting split ratios), validated against brute force.
+\item Exact solving works for small instances and shows large MLU reductions (02: $1.00\to0.55$).
+\item Beyond $\approx10^6$ binaries the solver rarely improves the MIP start in the time limit;
+beyond $\approx6\cdot10^7$ (period 0) the model cannot even be built in 125~GB.
+\item Next steps: restrict candidate waypoints, column generation on segment paths, full lexicographic objective.
+\end{itemize}
+\vspace{4mm}
+\centering\Large Thank you -- questions?
+\note{
+To conclude: we built a compact MILP for T-adaptive segment routing, with segment variables and path-counting split ratios, validated against brute force.
+
+Exact solving works for small instances and gives large MLU reductions, for example 1.00 to 0.55 on instance 2.
+
+Beyond about one million binaries the solver rarely improves the MIP start within the time limit; beyond about 60 million variables in period 0 the model cannot even be built in 125 GB.
+
+Next steps: restrict the candidate waypoints, column generation on segment paths, and the full lexicographic objective.
+
+Thank you; we are happy to take questions.
+}
+\end{frame}
+
+\appendix
+\begin{frame}{Backup -- periods 0 and 1 with presolve on}
+\centering
+\adjustbox{max width=\textwidth}{\input{../report/tables/results-period01-presolve-on.tex}}
+\note{
+Backup, only for questions: two-period results with HiGHS presolve on, small instances. Compare instance 2: two of ten optimal with presolve on versus seven of ten with presolve off.
+}
+\end{frame}
+
+\end{document}

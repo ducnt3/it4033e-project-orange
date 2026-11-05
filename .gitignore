@@ -1,0 +1,24 @@
+.DS_Store
+~$*
+node_modules/
+package-lock.json
+
+# LaTeX build artefacts
+*.aux
+*.log
+!results/**/*.log
+*.nav
+*.out
+*.snm
+*.toc
+*.synctex.gz
+texput.*
+# stale build outputs (the submitted PDFs carry the authors' names)
+slides/slides.pdf
+report/report.pdf
+
+# local experiment scratch (campaign results live in results/remote/)
+results/logs/
+results/*.csv
+*.bak
+*.bak[0-9]

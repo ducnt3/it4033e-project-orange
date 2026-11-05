@@ -1,0 +1,2 @@
+instance,periods,seed,n,m,demands,vars,constraints,status,objective,bound,gap,solve_time,build_time,nodes,mlu_check,baseline,presolve
+setA-08,0+1,1,150,654,200,13410001,9001708,TIME_LIMIT,1.0,0.3189036974295927,0.6810963025704073,3892.19803881,33.305699935,0,1.0,1.0,off

@@ -1,0 +1,5 @@
+setA-04 run 6: TIME_LIMIT obj=0.6759 gap=0.1402 time=3648.2s nodes=0
+setA-04 run 7: TIME_LIMIT obj=1.0000 gap=0.4189 time=3636.1s nodes=0
+setA-04 run 8: TIME_LIMIT obj=1.0000 gap=0.4189 time=3630.4s nodes=0
+setA-04 run 9: TIME_LIMIT obj=0.6446 gap=0.0984 time=3641.9s nodes=0
+setA-04 run 10: TIME_LIMIT obj=1.0000 gap=0.4189 time=3631.5s nodes=0

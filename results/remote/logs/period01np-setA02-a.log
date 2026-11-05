@@ -1,0 +1,5 @@
+setA-02 run 1: OPTIMAL obj=0.9031 gap=0.0000 time=42.7s nodes=1
+setA-02 run 2: OPTIMAL obj=0.9031 gap=0.0000 time=1232.8s nodes=1
+setA-02 run 3: OPTIMAL obj=0.9031 gap=0.0000 time=3265.7s nodes=1
+setA-02 run 4: TIME_LIMIT obj=0.9034 gap=0.0003 time=3605.8s nodes=31
+setA-02 run 5: OPTIMAL obj=0.9031 gap=0.0000 time=1347.9s nodes=1

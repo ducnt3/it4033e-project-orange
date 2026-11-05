@@ -1,0 +1,37 @@
+# <peak_GB> <job> <run_experiments.jl options>   (peak ≈ 2 GB per million binary vars, measured on 06/07)
+# already launched (kept for the record): sizes-setA13-20, period01-setA04-a/b, period01-setA05-a/b (killed: presolve stall), period0-setA10-a
+# two-period runs use --presolve off: HiGHS presolve stalls on the dense budget row far beyond the time limit
+# 2026-10-19 08:30 re-estimated: presolve-off 0+1 uses ≈5.5 GB per million vars (05: 2.97M → 16 GB).
+# 07 (23.8M, ≈130 GB) and 10–12 (47–67M) two-period models exceed 125 GB → size-only rows.
+2 period01np-setA01 --periods 0,1 --time-limit 3600 --presolve off --max-vars 200000000 --instances 1:1 --runs 10
+2 period01np-setA02-a --periods 0,1 --time-limit 3600 --presolve off --max-vars 200000000 --instances 2:2 --seeds 1:5
+2 period01np-setA02-b --periods 0,1 --time-limit 3600 --presolve off --max-vars 200000000 --instances 2:2 --seeds 6:10
+2 period01np-setA03-a --periods 0,1 --time-limit 3600 --presolve off --max-vars 200000000 --instances 3:3 --seeds 1:5
+2 period01np-setA03-b --periods 0,1 --time-limit 3600 --presolve off --max-vars 200000000 --instances 3:3 --seeds 6:10
+6 period01np-setA04-a --periods 0,1 --time-limit 3600 --presolve off --max-vars 200000000 --instances 4:4 --seeds 1:5
+6 period01np-setA04-b --periods 0,1 --time-limit 3600 --presolve off --max-vars 200000000 --instances 4:4 --seeds 6:10
+9 period01np-setA05-a --periods 0,1 --time-limit 3600 --presolve off --max-vars 200000000 --instances 5:5 --seeds 1:5
+9 period01np-setA05-b --periods 0,1 --time-limit 3600 --presolve off --max-vars 200000000 --instances 5:5 --seeds 6:10
+2 sizes-period01-setA07-10-20 --periods 0,1 --presolve off --instances vcat(7,10:20) --runs 1 --max-vars 1
+50 period0-setA10-b --periods 0 --time-limit 1800 --max-vars 200000000 --instances 10:10 --seeds 6:10
+42 period0-setA11-a --periods 0 --time-limit 1800 --max-vars 200000000 --instances 11:11 --seeds 1:5
+42 period0-setA11-b --periods 0 --time-limit 1800 --max-vars 200000000 --instances 11:11 --seeds 6:10
+42 period0-setA12-a --periods 0 --time-limit 1800 --max-vars 200000000 --instances 12:12 --seeds 1:5
+42 period0-setA12-b --periods 0 --time-limit 1800 --max-vars 200000000 --instances 12:12 --seeds 6:10
+# 2026-10-19 14:50: 14/15 (period 0) moved before 06/08/09 two-period: period-0 coverage first; 08 period-0 run 4 took 37322 s (1800 s limit)
+80 period0-setA14 --periods 0 --time-limit 1800 --max-vars 200000000 --instances 14:14 --runs 10
+80 period0-setA15 --periods 0 --time-limit 1800 --max-vars 200000000 --instances 15:15 --runs 10
+# 2026-10-20 08:15: deadline 24/10 18:59 VN → 0+1 halves reordered: seeds 1-5 of 06, 09, 08 first, then seeds 6-10
+58 period01np-setA06-a --periods 0,1 --time-limit 3600 --presolve off --max-vars 200000000 --instances 6:6 --seeds 1:5
+# 2026-10-20 19:00: size rows re-done (old estimate counted x only, not y); 07 0+1 = 23.8M vars x 3.7 GB/M = 88 GB fits alone
+2 sizes-period01-setA10-20-v2 --periods 0,1 --presolve off --instances 10:20 --runs 1 --max-vars 1
+52 period01np-setA09-a --periods 0,1 --time-limit 3600 --presolve off --max-vars 200000000 --instances 9:9 --seeds 1:5
+76 period01np-setA08-a --periods 0,1 --time-limit 3600 --presolve off --max-vars 200000000 --instances 8:8 --seeds 1:5
+58 period01np-setA06-b --periods 0,1 --time-limit 3600 --presolve off --max-vars 200000000 --instances 6:6 --seeds 6:10
+52 period01np-setA09-b --periods 0,1 --time-limit 3600 --presolve off --max-vars 200000000 --instances 9:9 --seeds 6:10
+# 2026-10-20 18:50: measured 06 0+1 peak 54.8 GB for 14.85M vars (3.7 GB/M, not 5.5) -> 06: 58 GB, 08/09 (13.4M vars): 52 GB, so two 0+1 jobs fit at once
+92 period01np-setA07-a --periods 0,1 --time-limit 3600 --presolve off --max-vars 200000000 --instances 7:7 --seeds 1:5
+92 period01np-setA07-b --periods 0,1 --time-limit 3600 --presolve off --max-vars 200000000 --instances 7:7 --seeds 6:10
+# 2026-10-21 00:50: 08-a 0+1 RSS 71 GB (13.4M vars, 5.3 GB/M) -> 08 peak 76 GB
+# 2026-10-21 02:50: 08-a run 2 > 5 h (overrun) -> 08-b moved after 07 (runs only if time remains before the 23/10 cut-off)
+76 period01np-setA08-b --periods 0,1 --time-limit 3600 --presolve off --max-vars 200000000 --instances 8:8 --seeds 6:10

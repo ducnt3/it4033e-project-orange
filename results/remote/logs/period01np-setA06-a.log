@@ -1,0 +1,5 @@
+setA-06 run 1: TIME_LIMIT obj=1.0000 gap=1.0000 time=3879.1s nodes=0
+setA-06 run 2: TIME_LIMIT obj=1.0000 gap=1.0000 time=3874.9s nodes=0
+setA-06 run 3: TIME_LIMIT obj=1.0000 gap=1.0000 time=3880.5s nodes=0
+setA-06 run 4: TIME_LIMIT obj=1.0000 gap=1.0000 time=3887.5s nodes=0
+setA-06 run 5: TIME_LIMIT obj=1.0000 gap=1.0000 time=3944.9s nodes=0

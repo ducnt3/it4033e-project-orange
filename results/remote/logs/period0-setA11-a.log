@@ -1,0 +1,5 @@
+setA-11 run 1: TIME_LIMIT obj=1.0000 gap=Inf time=2313.2s nodes=0
+setA-11 run 2: TIME_LIMIT obj=1.0000 gap=1.0000 time=2454.8s nodes=0
+setA-11 run 3: TIME_LIMIT obj=1.0000 gap=1.0000 time=2396.8s nodes=0
+setA-11 run 4: TIME_LIMIT obj=1.0000 gap=1.0000 time=2471.6s nodes=0
+setA-11 run 5: TIME_LIMIT obj=1.0000 gap=1.0000 time=2466.2s nodes=0
